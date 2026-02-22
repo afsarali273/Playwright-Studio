@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
+
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #135bec;
+  --color-primary-hover: #0f4bc4;
+  --color-background-light: #f6f6f8;
+  --color-background-dark: #0f1117;
+  --color-surface-dark: #181b25;
+  --color-surface-lighter: #232736;
+  --color-border-dark: #2e3445;
+  --color-code-bg: #1e2029;
+  --color-syntax-keyword: #c678dd;
+  --color-syntax-string: #98c379;
+  --color-syntax-func: #61afef;
+  --color-syntax-comment: #5c6370;
+
+  --font-display: "Manrope", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { 
+    width: 8px; 
+    height: 8px; 
+} 
+::-webkit-scrollbar-track { 
+    background: #181b25; 
+} 
+::-webkit-scrollbar-thumb { 
+    background: #2e3445; 
+    border-radius: 4px; 
+} 
+::-webkit-scrollbar-thumb:hover { 
+    background: #3e4559; 
+}
+
+/* Animations */
+@keyframes pulse-red { 
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 
+    70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); } 
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } 
+} 
+.animate-pulse-ring { 
+    animation: pulse-red 2s infinite; 
+}
+
+.right-panel-transition { 
+    transition: width 0.3s ease-in-out, margin 0.3s ease-in-out, opacity 0.2s ease-in-out; 
+} 
+
+.panel-collapsed #right-sidebar { 
+    width: 0px !important; 
+    min-width: 0px !important; 
+    overflow: hidden; 
+    border-left-width: 0px; 
+    opacity: 0; 
+}
+
+body {
+    background-color: var(--color-background-dark);
+    color: #f1f5f9; /* slate-100 */
+    font-family: var(--font-display);
+    height: 100vh;
+    overflow: hidden;
+}
+
+#root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 24
+}

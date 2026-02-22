@@ -1,0 +1,45 @@
+[
+  {
+    "id": "step-001",
+    "action": "navigate",
+    "selector": "",
+    "value": "https://example.com",
+    "description": "Navigate to page",
+    "timestamp": 1708300000000,
+    "status": "idle"
+  },
+  {
+    "id": "step-002",
+    "action": "click",
+    "selector": "[data-testid=\"login-button\"]",
+    "description": "Click on login button",
+    "timestamp": 1708300001000,
+    "status": "idle"
+  },
+  {
+    "id": "step-003",
+    "action": "input",
+    "selector": "[data-testid=\"username-input\"]",
+    "value": "testuser",
+    "description": "Type username",
+    "timestamp": 1708300002000,
+    "status": "idle"
+  },
+  {
+    "id": "step-004",
+    "action": "input",
+    "selector": "[data-testid=\"password-input\"]",
+    "value": "password123",
+    "description": "Type password",
+    "timestamp": 1708300003000,
+    "status": "idle"
+  },
+  {
+    "id": "step-005",
+    "action": "click",
+    "selector": "[data-testid=\"submit-button\"]",
+    "description": "Click submit",
+    "timestamp": 1708300004000,
+    "status": "idle"
+  }
+]

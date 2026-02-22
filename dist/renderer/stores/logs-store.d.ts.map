@@ -1,0 +1,1 @@
+{"version":3,"file":"logs-store.d.ts","sourceRoot":"","sources":["../../../src/renderer/stores/logs-store.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAGH,OAAO,KAAK,EAAE,QAAQ,EAAE,MAAM,oBAAoB,CAAC;AAInD,UAAU,SAAS;IACjB,IAAI,EAAE,QAAQ,EAAE,CAAC;IACjB,MAAM,EAAE,CAAC,KAAK,EAAE,QAAQ,KAAK,IAAI,CAAC;IAClC,SAAS,EAAE,MAAM,IAAI,CAAC;CACvB;AAED,eAAO,MAAM,YAAY,wEAStB,CAAC"}

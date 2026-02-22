@@ -1,0 +1,11 @@
+{
+  "name": "Example Project",
+  "version": "1.0.0",
+  "baseUrl": "https://example.com",
+  "browser": "chromium",
+  "headless": false,
+  "viewport": { "width": 1280, "height": 720 },
+  "timeout": 30000,
+  "createdAt": "2025-02-18T00:00:00.000Z",
+  "updatedAt": "2025-02-18T00:00:00.000Z"
+}
