@@ -52,8 +52,6 @@ jobs:
       - name: 📦 Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: 🎨 Generate icons (macOS — builds .icns + .ico + .png)
-        run: python3 scripts/generate-icons.py
 
       # Build order: electron (tsc) FIRST, then renderer (Vite) LAST
       # This ensures Vite bundle is never overwritten by tsc output
@@ -122,15 +120,6 @@ jobs:
       - name: 📦 Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: 🐍 Setup Python for icon generation
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: 🎨 Generate icons (Windows — builds .ico + .png, skips .icns)
-        run: |
-          pip install Pillow -q
-          python scripts/generate-icons.py
 
       # Build order: electron (tsc) FIRST, then renderer (Vite) LAST
       - name: 🏗️ Build electron main (TypeScript)
@@ -210,10 +199,6 @@ jobs:
       - name: 📦 Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: 🎨 Generate icons (Linux — builds .ico + .png, skips .icns)
-        run: |
-          pip install Pillow -q
-          python3 scripts/generate-icons.py
 
       # Build order: electron (tsc) FIRST, then renderer (Vite) LAST
       - name: 🏗️ Build electron main (TypeScript)
@@ -344,5 +329,5 @@ jobs:
             ./artifacts/**/*.deb
             ./artifacts/**/*.rpm
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
