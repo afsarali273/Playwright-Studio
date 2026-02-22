@@ -120,7 +120,12 @@ export function registerIpcHandlers(
 
     /* Save to project if one is open */
     if (projectManager.getProjectPath()) {
-      const ext = language === 'java' ? 'java' : 'ts';
+      let ext = 'ts';
+      if (language === 'java') {
+        ext = 'java';
+      } else if (language === 'cucumber') {
+        ext = 'feature';
+      }
       const filename = `test-${Date.now()}.${ext}`;
       await projectManager.saveScript(filename, script);
     }

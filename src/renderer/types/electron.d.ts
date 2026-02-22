@@ -38,7 +38,7 @@ export interface ElectronAPI {
   clearSteps: () => Promise<void>;
 
   /* ---- Generator ---- */
-  exportScript: (language?: 'typescript' | 'java') => Promise<string>;
+  exportScript: (language?: 'typescript' | 'java' | 'cucumber') => Promise<string>;
 
   /* ---- Project ---- */
   newProject: (name: string) => Promise<void>;

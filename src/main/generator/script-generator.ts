@@ -1,13 +1,14 @@
 /**
- * ScriptGenerator - Converts TestSteps into a valid Playwright test file.
- * Generates idiomatic test code using the @playwright/test framework syntax.
+ * ScriptGenerator - Converts TestSteps into test files for multiple languages.
+ * Supports TypeScript (Playwright), Java (Playwright), and Cucumber (Gherkin).
  */
 
 import type { TestStep, ProjectConfig } from '../../shared/types';
 import { mapStepToAction } from '../runner/action-mapper';
 import { mapStepToJava } from './java-mapper';
+import { mapStepToCucumber } from './cucumber-mapper';
 
-export type ScriptLanguage = 'typescript' | 'java';
+export type ScriptLanguage = 'typescript' | 'java' | 'cucumber';
 
 export class ScriptGenerator {
   /**
@@ -16,6 +17,9 @@ export class ScriptGenerator {
   generate(steps: TestStep[], config?: Partial<ProjectConfig>, language: ScriptLanguage = 'typescript'): string {
     if (language === 'java') {
       return this.generateJava(steps, config);
+    }
+    if (language === 'cucumber') {
+      return this.generateCucumber(steps, config);
     }
 
     const testName = config?.name ?? 'Generated Test';
@@ -86,6 +90,41 @@ export class ScriptGenerator {
     return lines.join('\n');
   }
 
+  /**
+   * Generate a test file with multiple scenarios grouped by navigation for Cucumber.
+   */
+  generateGroupedCucumber(steps: TestStep[], config?: Partial<ProjectConfig>): string {
+    const featureName = config?.name ?? 'Generated Feature Suite';
+    const lines: string[] = [];
+
+    lines.push(`Feature: ${this.escapeQuotes(featureName)}`);
+    lines.push('');
+
+    /* Group steps by navigation boundaries */
+    const groups = this.groupByNavigation(steps);
+
+    groups.forEach((group, index) => {
+      const scenarioLabel = group.url
+        ? `Scenario ${index + 1}: ${group.url}`
+        : `Scenario ${index + 1}`;
+
+      lines.push(`Scenario: ${this.escapeQuotes(scenarioLabel)}`);
+      lines.push('');
+      lines.push('Given web open browser');
+      lines.push('');
+
+      for (const step of group.steps) {
+        const gherkinStep = mapStepToCucumber(step);
+        lines.push(gherkinStep);
+        lines.push('');
+      }
+
+      lines.push('');
+    });
+
+    return lines.join('\n');
+  }
+
   private generateJava(steps: TestStep[], config?: Partial<ProjectConfig>): string {
     const testName = config?.name ?? 'GeneratedTest';
     const className = testName.replace(/[^a-zA-Z0-9]/g, '');
@@ -117,6 +156,27 @@ export class ScriptGenerator {
     lines.push("        }");
     lines.push("    }");
     lines.push("}");
+
+    return lines.join('\n');
+  }
+
+  private generateCucumber(steps: TestStep[], config?: Partial<ProjectConfig>): string {
+    const featureName = config?.name ?? 'Generated Feature';
+    const scenarioName = config?.name ?? 'Generated Scenario';
+    const lines: string[] = [];
+
+    lines.push(`Feature: ${this.escapeQuotes(featureName)}`);
+    lines.push('');
+    lines.push(`Scenario: ${this.escapeQuotes(scenarioName)}`);
+    lines.push('');
+    lines.push('Given web open browser');
+    lines.push('');
+
+    for (const step of steps) {
+      const gherkinStep = mapStepToCucumber(step);
+      lines.push(gherkinStep);
+      lines.push('');
+    }
 
     return lines.join('\n');
   }

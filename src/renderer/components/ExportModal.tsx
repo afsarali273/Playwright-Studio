@@ -61,7 +61,12 @@ export const ExportModal: React.FC = () => {
   }, [code]);
 
   const handleDownload = useCallback(() => {
-    const ext = exportLanguage === 'java' ? 'java' : 'ts';
+    let ext = 'ts';
+    if (exportLanguage === 'java') {
+      ext = 'java';
+    } else if (exportLanguage === 'cucumber') {
+      ext = 'feature';
+    }
     const blob = new Blob([code], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -87,7 +92,9 @@ export const ExportModal: React.FC = () => {
              </div>
              <div>
                 <h3 className="text-sm font-bold text-white">Export Test Script</h3>
-                <p className="text-[11px] text-slate-400">Generated Playwright TypeScript code</p>
+                <p className="text-[11px] text-slate-400">
+                  Generated {exportLanguage === 'cucumber' ? 'Cucumber Gherkin feature file' : exportLanguage === 'java' ? 'Playwright Java code' : 'Playwright TypeScript code'}
+                </p>
              </div>
           </div>
           
@@ -100,6 +107,7 @@ export const ExportModal: React.FC = () => {
                 >
                     <option value="typescript">TypeScript</option>
                     <option value="java">Java</option>
+                    <option value="cucumber">Cucumber</option>
                 </select>
             </div>
 
@@ -120,7 +128,7 @@ export const ExportModal: React.FC = () => {
               className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-primary-hover text-white rounded text-xs font-medium transition-colors shadow-lg shadow-primary/20"
             >
               <Download size={14} />
-              Download .ts
+              Download .{exportLanguage === 'cucumber' ? 'feature' : exportLanguage === 'java' ? 'java' : 'ts'}
             </button>
 
             <div className="w-[1px] h-6 bg-border-dark mx-2"></div>
@@ -138,7 +146,7 @@ export const ExportModal: React.FC = () => {
         <div className="flex-1 overflow-hidden relative group">
            <div className="absolute inset-0 overflow-auto custom-scrollbar bg-[#1e1e1e]">
               <SyntaxHighlighter
-                language={exportLanguage}
+                language={exportLanguage === 'cucumber' ? 'gherkin' : exportLanguage}
                 style={vscDarkPlus}
                 customStyle={{
                     margin: 0,
@@ -165,7 +173,7 @@ export const ExportModal: React.FC = () => {
         <div className="p-3 border-t border-border-dark bg-surface-lighter/5 flex justify-between items-center text-[10px] text-slate-500">
            <span>Playwright v1.42.0 Compatible</span>
            <div className="flex gap-4">
-              <span>TypeScript</span>
+              <span>{exportLanguage === 'cucumber' ? 'Gherkin' : exportLanguage === 'java' ? 'Java' : 'TypeScript'}</span>
               <span>UTF-8</span>
            </div>
         </div>

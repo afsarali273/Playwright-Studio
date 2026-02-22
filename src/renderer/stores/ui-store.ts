@@ -6,7 +6,7 @@
 import { create } from 'zustand';
 import type { InspectorPayload } from '../../shared/types';
 
-export type ScriptLanguage = 'typescript' | 'java';
+export type ScriptLanguage = 'typescript' | 'java' | 'cucumber';
 
 interface UIState {
   leftPanelWidth: number;

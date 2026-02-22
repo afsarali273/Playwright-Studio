@@ -72,7 +72,7 @@ const electronAPI = {
     ipcRenderer.invoke(IpcChannels.STEP_CLEAR),
 
   /* ---- Generator ---- */
-  exportScript: (language: 'typescript' | 'java' = 'typescript'): Promise<string> =>
+  exportScript: (language: 'typescript' | 'java' | 'cucumber' = 'typescript'): Promise<string> =>
     ipcRenderer.invoke(IpcChannels.GENERATOR_EXPORT, language),
 
   /* ---- Project ---- */
