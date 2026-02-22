@@ -9,6 +9,7 @@ import { useStepsStore } from '../stores/steps-store';
 import { useRunnerStore } from '../stores/runner-store';
 import { ACTION_LABELS } from '../../shared/constants';
 import type { TestStep, SelectorCandidate } from '../../shared/types';
+import { RecordingControlPanel } from './RecordingControlPanel';
 import {
   MousePointerClick,
   Type,
@@ -21,7 +22,6 @@ import {
   Copy,
   ChevronDown,
 } from 'lucide-react';
-import { useUIStore } from '../stores/ui-store';
 
 /* ---- Icon mapping for action types ---- */
 function ActionIcon({ action, className }: { action: string; className?: string }) {
@@ -221,7 +221,7 @@ export const StepList: React.FC = () => {
   }, []);
 
   return (
-    <aside className="w-64 flex flex-col bg-surface-dark border-r border-border-dark flex-shrink-0">
+    <aside className="w-64 flex flex-col bg-surface-dark border-r border-border-dark flex-shrink-0 h-full">
       <div className="p-3 border-b border-border-dark flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Steps</span>
@@ -235,7 +235,7 @@ export const StepList: React.FC = () => {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
         <div className="p-2 space-y-1">
           {steps.map((step, idx) => (
               <StepRow
@@ -255,6 +255,8 @@ export const StepList: React.FC = () => {
           )}
         </div>
       </div>
+
+      <RecordingControlPanel />
     </aside>
   );
 };

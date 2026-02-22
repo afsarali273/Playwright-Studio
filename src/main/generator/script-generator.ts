@@ -5,12 +5,19 @@
 
 import type { TestStep, ProjectConfig } from '../../shared/types';
 import { mapStepToAction } from '../runner/action-mapper';
+import { mapStepToJava } from './java-mapper';
+
+export type ScriptLanguage = 'typescript' | 'java';
 
 export class ScriptGenerator {
   /**
    * Generate a complete Playwright test file from steps.
    */
-  generate(steps: TestStep[], config?: Partial<ProjectConfig>): string {
+  generate(steps: TestStep[], config?: Partial<ProjectConfig>, language: ScriptLanguage = 'typescript'): string {
+    if (language === 'java') {
+      return this.generateJava(steps, config);
+    }
+
     const testName = config?.name ?? 'Generated Test';
     const lines: string[] = [];
 
@@ -75,6 +82,41 @@ export class ScriptGenerator {
 
     lines.push('});');
     lines.push('');
+
+    return lines.join('\n');
+  }
+
+  private generateJava(steps: TestStep[], config?: Partial<ProjectConfig>): string {
+    const testName = config?.name ?? 'GeneratedTest';
+    const className = testName.replace(/[^a-zA-Z0-9]/g, '');
+    const lines: string[] = [];
+
+    lines.push("import com.microsoft.playwright.*;");
+    lines.push("import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;");
+    lines.push("import java.nio.file.Paths;");
+    lines.push("import java.util.regex.Pattern;");
+    lines.push("");
+    lines.push(`public class ${className} {`);
+    lines.push("    public static void main(String[] args) {");
+    lines.push("        try (Playwright playwright = Playwright.create()) {");
+    lines.push("            Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(false));");
+    lines.push("            BrowserContext context = browser.newContext();");
+    lines.push("            Page page = context.newPage();");
+    lines.push("");
+
+    for (const step of steps) {
+        if (step.description) {
+            lines.push(`            // ${step.description}`);
+        }
+        lines.push(`            ${mapStepToJava(step).trim()}`);
+    }
+
+    lines.push("");
+    lines.push("            context.close();");
+    lines.push("            browser.close();");
+    lines.push("        }");
+    lines.push("    }");
+    lines.push("}");
 
     return lines.join('\n');
   }

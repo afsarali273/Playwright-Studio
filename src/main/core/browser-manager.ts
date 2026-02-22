@@ -238,8 +238,8 @@ export class BrowserManager {
              // Let's try to require it dynamically to avoid top-level cycle if any.
              const { getInjectScript } = require('../recorder/inject-script');
              
-             // Check if already injected by checking for __recorder global
-             const isPresent = await this.browserView!.webContents.executeJavaScript("typeof window.__recorder !== 'undefined'");
+             // Check if already injected by checking for __playwrightRecorderActive global
+             const isPresent = await this.browserView!.webContents.executeJavaScript("typeof window.__playwrightRecorderActive !== 'undefined'");
              
              if (!isPresent) {
                  await this.browserView!.webContents.executeJavaScript(getInjectScript());

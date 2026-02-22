@@ -18,6 +18,16 @@ export interface MappedAction {
  * Supports both CSS/XPath strings and Playwright locator methods (getBy...).
  */
 function getLocator(page: Page, selector: string): Locator {
+  if (selector.startsWith('page.')) {
+     // Strip 'page.' and use the rest
+     const rest = selector.substring(5);
+     try {
+        const func = new Function('page', `return page.${rest}`);
+        return func(page);
+     } catch (e) {
+        return page.locator(selector);
+     }
+  }
   if (selector.startsWith('getBy') || selector.startsWith('locator(')) {
     try {
       // Dynamically evaluate locator methods (e.g. "getByRole('button', { name: 'Save' })")
@@ -37,6 +47,9 @@ function getLocator(page: Page, selector: string): Locator {
  * Helper to generate code snippet for the locator.
  */
 function getLocatorCode(selector: string): string {
+  if (selector.startsWith('page.')) {
+      return selector;
+  }
   if (selector.startsWith('getBy') || selector.startsWith('locator(')) {
     return `page.${selector}`;
   }

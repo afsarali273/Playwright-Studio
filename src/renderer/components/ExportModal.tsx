@@ -5,7 +5,7 @@
  */
 
 import React, { useCallback, useState, useEffect } from 'react';
-import { useUIStore } from '../stores/ui-store';
+import { useUIStore, type ScriptLanguage } from '../stores/ui-store';
 import { X, Copy, Download, Check, FileText } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -14,6 +14,9 @@ export const ExportModal: React.FC = () => {
   const isOpen = useUIStore((s) => s.exportModalOpen);
   const code = useUIStore((s) => s.exportedCode);
   const setOpen = useUIStore((s) => s.setExportModalOpen);
+  const exportLanguage = useUIStore((s) => s.exportLanguage);
+  const setExportLanguage = useUIStore((s) => s.setExportLanguage);
+  const setExportedCode = useUIStore((s) => s.setExportedCode);
   
   const [copied, setCopied] = useState(false);
 
@@ -39,6 +42,14 @@ export const ExportModal: React.FC = () => {
     setOpen(false);
   };
 
+  const handleLanguageChange = useCallback(async (lang: ScriptLanguage) => {
+    setExportLanguage(lang);
+    if (window.electronAPI) {
+      const code = await window.electronAPI.exportScript(lang);
+      setExportedCode(code);
+    }
+  }, [setExportLanguage, setExportedCode]);
+
   const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(code);
@@ -50,16 +61,17 @@ export const ExportModal: React.FC = () => {
   }, [code]);
 
   const handleDownload = useCallback(() => {
-    const blob = new Blob([code], { type: 'text/typescript' });
+    const ext = exportLanguage === 'java' ? 'java' : 'ts';
+    const blob = new Blob([code], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'generated-test.spec.ts';
+    a.download = `generated-test.${ext}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [code]);
+  }, [code, exportLanguage]);
 
   if (!isOpen) return null;
 
@@ -80,6 +92,17 @@ export const ExportModal: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mr-2">
+                <select 
+                    className="bg-surface-lighter text-xs text-slate-300 border border-border-dark rounded px-2 py-1 outline-none focus:border-primary cursor-pointer"
+                    value={exportLanguage}
+                    onChange={(e) => handleLanguageChange(e.target.value as ScriptLanguage)}
+                >
+                    <option value="typescript">TypeScript</option>
+                    <option value="java">Java</option>
+                </select>
+            </div>
+
             <button
               onClick={handleCopy}
               className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium transition-all ${
@@ -115,7 +138,7 @@ export const ExportModal: React.FC = () => {
         <div className="flex-1 overflow-hidden relative group">
            <div className="absolute inset-0 overflow-auto custom-scrollbar bg-[#1e1e1e]">
               <SyntaxHighlighter
-                language="typescript"
+                language={exportLanguage}
                 style={vscDarkPlus}
                 customStyle={{
                     margin: 0,

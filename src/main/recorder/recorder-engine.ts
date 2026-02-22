@@ -5,6 +5,7 @@
  */
 
 import { BrowserWindow, ipcMain } from 'electron';
+import path from 'path';
 import { BrowserManager } from '../core/browser-manager';
 import { eventBus } from '../core/event-bus';
 import { getInjectScript } from './inject-script';
@@ -97,7 +98,7 @@ export class RecorderEngine {
       wc.on('dom-ready', this.onDomReady);
     }
 
-    this.mainWindow.webContents.send(IpcChannels.RECORDER_STATUS, {
+    this.broadcast(IpcChannels.RECORDER_STATUS, {
       recording: true,
       paused: false,
       url: targetUrl,
@@ -113,7 +114,7 @@ export class RecorderEngine {
     this.isPaused = false;
     this.cleanupListeners();
 
-    this.mainWindow.webContents.send(IpcChannels.RECORDER_STATUS, {
+    this.broadcast(IpcChannels.RECORDER_STATUS, {
       recording: false,
       paused: false,
     });
@@ -125,7 +126,7 @@ export class RecorderEngine {
     if (!this.isRecording || this.isPaused) return;
     this.isPaused = true;
 
-    this.mainWindow.webContents.send(IpcChannels.RECORDER_STATUS, {
+    this.broadcast(IpcChannels.RECORDER_STATUS, {
       recording: true,
       paused: true,
     });
@@ -137,7 +138,7 @@ export class RecorderEngine {
     if (!this.isRecording || !this.isPaused) return;
     this.isPaused = false;
 
-    this.mainWindow.webContents.send(IpcChannels.RECORDER_STATUS, {
+    this.broadcast(IpcChannels.RECORDER_STATUS, {
       recording: true,
       paused: false,
     });
@@ -177,7 +178,7 @@ export class RecorderEngine {
 
   addStep(step: TestStep): void {
     this.steps.push(step);
-    this.mainWindow.webContents.send(IpcChannels.STEP_ADDED, step);
+    this.broadcast(IpcChannels.STEP_ADDED, step);
     eventBus.emit('step:added', step);
   }
 
@@ -219,6 +220,12 @@ export class RecorderEngine {
   }
 
   /* ---- Private ---- */
+
+  private broadcast(channel: string, ...args: any[]): void {
+    if (!this.mainWindow.isDestroyed()) {
+        this.mainWindow.webContents.send(channel, ...args);
+    }
+  }
 
   private async injectRecorder(): Promise<void> {
     const wc = this.browserManager.getWebContents();
@@ -445,7 +452,7 @@ export class RecorderEngine {
       entry.stepId = stepId;
     }
     eventBus.emit('log', entry);
-    this.mainWindow.webContents.send(IpcChannels.LOG_EVENT, entry);
+    this.broadcast(IpcChannels.LOG_EVENT, entry);
   }
 
   private setupIpcListeners(): void {

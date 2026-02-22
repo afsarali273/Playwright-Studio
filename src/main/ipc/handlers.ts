@@ -8,7 +8,7 @@ import { IpcChannels } from '../../shared/ipc-channels';
 import { RecorderEngine } from '../recorder/recorder-engine';
 import { RunnerEngine } from '../runner/runner-engine';
 import { ProjectManager } from '../storage/project-manager';
-import { ScriptGenerator } from '../generator/script-generator';
+import { ScriptGenerator, ScriptLanguage } from '../generator/script-generator';
 import { BrowserManager } from '../core/browser-manager';
 import type {
   TestStep,
@@ -113,14 +113,15 @@ export function registerIpcHandlers(
   /*  Generator                                                        */
   /* ---------------------------------------------------------------- */
 
-  ipcMain.handle(IpcChannels.GENERATOR_EXPORT, async () => {
+  ipcMain.handle(IpcChannels.GENERATOR_EXPORT, async (_event, language: ScriptLanguage = 'typescript') => {
     const steps = recorder.getSteps();
     const config = projectManager.getConfig();
-    const script = scriptGenerator.generate(steps, config ?? undefined);
+    const script = scriptGenerator.generate(steps, config ?? undefined, language);
 
     /* Save to project if one is open */
     if (projectManager.getProjectPath()) {
-      const filename = `test-${Date.now()}.spec.ts`;
+      const ext = language === 'java' ? 'java' : 'ts';
+      const filename = `test-${Date.now()}.${ext}`;
       await projectManager.saveScript(filename, script);
     }
 
@@ -218,7 +219,12 @@ export function registerIpcHandlers(
   ipcMain.on(
     IpcChannels.INSPECTOR_EVENT_FROM_PAGE,
     (_event, payload: InspectorPayload) => {
-      mainWindow.webContents.send(IpcChannels.INSPECTOR_PICK, payload);
+      // Broadcast to all windows (main window and recording panel)
+      BrowserWindow.getAllWindows().forEach((win) => {
+        if (!win.isDestroyed()) {
+          win.webContents.send(IpcChannels.INSPECTOR_PICK, payload);
+        }
+      });
     },
   );
 }

@@ -801,6 +801,7 @@ export function getInjectScript(): string {
         var attrs = getAttributes(el);
         var tag = el && el.tagName ? el.tagName.toLowerCase() : '';
         var text = (el.innerText || el.textContent || '').trim();
+        var value = el.value;
         
         var candidates = getCandidates(el);
         
@@ -824,6 +825,7 @@ export function getInjectScript(): string {
         return {
           tagName: tag,
           innerText: text.slice(0, 120),
+          value: value,
           attributes: attrs,
           candidates: candidates,
           rect: rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : undefined,

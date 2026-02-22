@@ -44,7 +44,11 @@ export interface TestStep {
   error?: string;
   screenshot?: string;
   meta?: Record<string, unknown>;
-  assertionType?: 'toBeVisible' | 'toHaveText' | 'toHaveValue' | 'toContainText' | 'toHaveAttribute' | 'toHaveCount';
+  assertionType?: 
+    | 'toBeVisible' | 'toBeHidden' | 'toExist' | 'toBeEnabled' | 'toBeDisabled'
+    | 'toHaveText' | 'toContainText' | 'toHaveAttribute' | 'toHaveClass' | 'toHaveCount'
+    | 'toHaveValue' | 'toBeEmpty' | 'toBeChecked' | 'toBeUnchecked'
+    | 'toHaveURL' | 'toHaveTitle';
   assertionValue?: string;
 }
 
@@ -247,6 +251,7 @@ export interface RunnerStatusPayload {
 export interface InspectorPayload {
   tagName?: string;
   innerText?: string;
+  value?: string;
   attributes?: Record<string, string>;
   candidates: SelectorCandidate[];
   rect?: { x: number; y: number; width: number; height: number };

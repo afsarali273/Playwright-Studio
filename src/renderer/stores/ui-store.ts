@@ -6,11 +6,14 @@
 import { create } from 'zustand';
 import type { InspectorPayload } from '../../shared/types';
 
+export type ScriptLanguage = 'typescript' | 'java';
+
 interface UIState {
   leftPanelWidth: number;
   rightPanelWidth: number;
   exportModalOpen: boolean;
   exportedCode: string;
+  exportLanguage: ScriptLanguage;
   urlBarFocused: boolean;
   browserUrl: string;
   browserTitle: string;
@@ -24,6 +27,7 @@ interface UIState {
   setRightPanelWidth: (w: number) => void;
   setExportModalOpen: (open: boolean) => void;
   setExportedCode: (code: string) => void;
+  setExportLanguage: (lang: ScriptLanguage) => void;
   setUrlBarFocused: (focused: boolean) => void;
   setBrowserUrl: (url: string) => void;
   setBrowserTitle: (title: string) => void;
@@ -40,6 +44,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   rightPanelWidth: 22,
   exportModalOpen: false,
   exportedCode: '',
+  exportLanguage: 'typescript',
   urlBarFocused: false,
   browserUrl: '',
   browserTitle: '',
@@ -53,6 +58,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setRightPanelWidth: (w) => set({ rightPanelWidth: w }),
   setExportModalOpen: (open) => set({ exportModalOpen: open }),
   setExportedCode: (code) => set({ exportedCode: code }),
+  setExportLanguage: (lang) => set({ exportLanguage: lang }),
   setUrlBarFocused: (focused) => set({ urlBarFocused: focused }),
   setBrowserUrl: (url) => set({ browserUrl: url }),
   setBrowserTitle: (title) => set({ browserTitle: title }),
