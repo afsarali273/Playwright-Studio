@@ -1,14 +1,12 @@
-# v0 runtime files
-__v0_runtime_loader.js
-__v0_devtools.tsx
-__v0_jsx-dev-runtime.ts
-
-# Common ignores
-node_modules/
+# Build outputs
+release/
+dist/
 .next/
-.env*.local
-.DS_Store
+node_modules/
 
-dist
-.next
-.idea
+# Keep icon source and generated icons — needed by CI
+!assets/icon-master.png
+!assets/icon.icns
+!assets/icon.ico
+!assets/icon.png
+

@@ -3,7 +3,7 @@
  * Handles creation, navigation, bounds, and lifecycle of the browsing surface.
  */
 
-import { BrowserView, BrowserWindow } from 'electron';
+import { BrowserView, BrowserWindow, session } from 'electron';
 import path from 'path';
 import http from 'http';
 import { eventBus } from './event-bus';
@@ -54,6 +54,8 @@ export class BrowserManager {
         contextIsolation: true,
         nodeIntegration: false,
         sandbox: false,
+        webSecurity: false,               // allow cross-origin requests from recorder scripts
+        allowRunningInsecureContent: true, // allow http content on https pages
       },
     });
 
@@ -82,6 +84,9 @@ export class BrowserManager {
     this.browserView.webContents.setUserAgent(
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
     );
+
+    // Strip headers that block cross-domain navigation inside BrowserView
+    this.setupHeaderInterception();
 
     this.setupListeners();
     return this.browserView;
@@ -271,6 +276,53 @@ export class BrowserManager {
   /* ---------------------------------------------------------------- */
   /*  Internal                                                         */
   /* ---------------------------------------------------------------- */
+
+  /**
+   * Intercept HTTP response headers and remove ones that block embedding:
+   *  - X-Frame-Options          → prevents framing (DENY / SAMEORIGIN)
+   *  - Content-Security-Policy  → frame-ancestors directive blocks BrowserView
+   *  - Cross-Origin-Embedder-Policy (COEP) → causes ERR_BLOCKED_BY_RESPONSE
+   *  - Cross-Origin-Opener-Policy (COOP)   → breaks cross-origin navigation
+   *
+   * We use the BrowserView's dedicated session so the main window session
+   * is never affected.
+   */
+  private setupHeaderInterception(): void {
+    if (!this.browserView) return;
+
+    const viewSession = this.browserView.webContents.session;
+
+    // Avoid registering duplicate listeners if view is recreated
+    viewSession.webRequest.onHeadersReceived({ urls: ['*://*/*'] }, (details, callback) => {
+      const headers = { ...details.responseHeaders };
+
+      // Keys in Electron headers are lower-case
+      delete headers['x-frame-options'];
+      delete headers['X-Frame-Options'];
+
+      // Strip frame-ancestors from CSP while preserving other directives
+      if (headers['content-security-policy']) {
+        headers['content-security-policy'] = headers['content-security-policy'].map((csp: string) =>
+          csp
+            .replace(/frame-ancestors[^;]*(;|$)/gi, '')
+            .replace(/require-trusted-types-for[^;]*(;|$)/gi, '')
+            .trim()
+        );
+      }
+      if (headers['content-security-policy-report-only']) {
+        headers['content-security-policy-report-only'] = headers['content-security-policy-report-only'].map((csp: string) =>
+          csp.replace(/frame-ancestors[^;]*(;|$)/gi, '').trim()
+        );
+      }
+
+      // Remove COEP / COOP which cause ERR_BLOCKED_BY_RESPONSE on cross-origin navigations
+      delete headers['cross-origin-embedder-policy'];
+      delete headers['cross-origin-opener-policy'];
+      delete headers['cross-origin-resource-policy'];
+
+      callback({ responseHeaders: headers });
+    });
+  }
 
   private setupListeners(): void {
     if (!this.browserView) return;

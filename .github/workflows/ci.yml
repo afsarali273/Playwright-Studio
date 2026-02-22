@@ -1,0 +1,56 @@
+name: 🔍 Playwright Studio — CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  typecheck-and-build:
+    name: 🧹 Type Check & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🐱 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: 📦 Get pnpm store path
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: 🗂️ Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: 📦 Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 🔍 TypeScript — type check (electron main)
+        run: pnpm exec tsc -p src/tsconfig.electron.json --noEmit
+
+      # Build order: electron (tsc) FIRST, then renderer (Vite) LAST
+      # Vite output must never be overwritten by tsc
+      - name: 🏗️ Build electron main (TypeScript)
+        run: pnpm run build:electron
+
+      - name: 🏗️ Build renderer (Vite)
+        run: pnpm run build:renderer
+
+      - name: ✅ All checks passed
+        run: echo "Build and type checks completed successfully!"
+

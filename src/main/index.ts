@@ -27,7 +27,9 @@ let projectManager: ProjectManager;
 let scriptGenerator: ScriptGenerator;
 let pluginManager: PluginManager;
 
-const isDev = process.env.NODE_ENV !== 'production';
+// isDev = true  → load Vite dev server (localhost:5173)
+// isDev = false → load dist/renderer/index.html (packaged build or NODE_ENV=production)
+const isDev = !app.isPackaged && process.env.NODE_ENV !== 'production';
 
 /* ------------------------------------------------------------------ */
 /*  Window Creation                                                    */
@@ -46,6 +48,7 @@ async function createMainWindow(): Promise<void> {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
+      webSecurity: false,                // allows file:// assets to load cross-origin
     },
   });
 
@@ -54,8 +57,9 @@ async function createMainWindow(): Promise<void> {
     await mainWindow.loadURL(DEV_SERVER_URL);
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    // In production (or NODE_ENV=production), load the built index.html
-    const indexPath = path.join(__dirname, '..', 'renderer', 'index.html');
+    // app.getAppPath() → root of the asar on all platforms (mac, win, linux)
+    // path.join handles separators correctly (/ on mac/linux, \ on windows)
+    const indexPath = path.join(app.getAppPath(), 'dist', 'renderer', 'index.html');
     console.log('[Main] Loading renderer from:', indexPath);
     await mainWindow.loadFile(indexPath);
   }

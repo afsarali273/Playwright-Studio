@@ -1,0 +1,348 @@
+name: 🚀 Playwright Studio — Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'           # Triggers on version tags: v1.0.0, v2.1.3, etc.
+  workflow_dispatch:       # Allow manual trigger from GitHub UI
+    inputs:
+      version:
+        description: 'Release version (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write          # Required to create GitHub Releases and upload assets
+
+jobs:
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 1 — Build macOS (Apple Silicon arm64 + Intel x64)
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-macos:
+    name: 🍎 macOS (arm64 + x64)
+    runs-on: macos-latest
+
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🐱 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: 📦 Get pnpm store path
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: 🗂️ Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: 📦 Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 🎨 Generate icons (macOS — builds .icns + .ico + .png)
+        run: python3 scripts/generate-icons.py
+
+      # Build order: electron (tsc) FIRST, then renderer (Vite) LAST
+      # This ensures Vite bundle is never overwritten by tsc output
+      - name: 🏗️ Build electron main (TypeScript)
+        run: pnpm run build:electron
+
+      - name: 🏗️ Build renderer (Vite)
+        run: pnpm run build:renderer
+
+      - name: 📦 Package — macOS arm64 (Apple Silicon)
+        run: pnpm exec electron-builder --mac dmg zip --arm64 --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📦 Package — macOS x64 (Intel)
+        run: pnpm exec electron-builder --mac dmg zip --x64 --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📤 Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: |
+            release/*.dmg
+            release/*.zip
+          if-no-files-found: warn
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 2 — Build Windows (64-bit x64 + 32-bit ia32)
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-windows:
+    name: 🪟 Windows (x64 + ia32)
+    runs-on: windows-latest
+
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🐱 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: 📦 Get pnpm store path
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: 🗂️ Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: 📦 Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 🐍 Setup Python for icon generation
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 🎨 Generate icons (Windows — builds .ico + .png, skips .icns)
+        run: |
+          pip install Pillow -q
+          python scripts/generate-icons.py
+
+      # Build order: electron (tsc) FIRST, then renderer (Vite) LAST
+      - name: 🏗️ Build electron main (TypeScript)
+        run: pnpm run build:electron
+
+      - name: 🏗️ Build renderer (Vite)
+        run: pnpm run build:renderer
+
+      - name: 📦 Package — Windows x64 (64-bit)
+        run: pnpm exec electron-builder --win nsis portable --x64 --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📦 Package — Windows ia32 (32-bit)
+        run: pnpm exec electron-builder --win nsis portable --ia32 --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📤 Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: |
+            release/*.exe
+          if-no-files-found: warn
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 3 — Build Linux (x64 AppImage + deb + rpm)
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-linux:
+    name: 🐧 Linux (x64)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🐱 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: 📦 Get pnpm store path
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: 🗂️ Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      # Required system libraries for Electron on Linux
+      - name: 🔧 Install Linux system dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libnotify-dev \
+            libnss3 \
+            libxss1 \
+            libxtst6 \
+            xauth \
+            xvfb \
+            libgbm-dev \
+            libasound2-dev \
+            rpm
+
+      - name: 📦 Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 🎨 Generate icons (Linux — builds .ico + .png, skips .icns)
+        run: |
+          pip install Pillow -q
+          python3 scripts/generate-icons.py
+
+      # Build order: electron (tsc) FIRST, then renderer (Vite) LAST
+      - name: 🏗️ Build electron main (TypeScript)
+        run: pnpm run build:electron
+
+      - name: 🏗️ Build renderer (Vite)
+        run: pnpm run build:renderer
+
+      - name: 📦 Package — Linux x64 (AppImage + deb + rpm)
+        run: pnpm exec electron-builder --linux AppImage deb rpm --x64 --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📤 Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: |
+            release/*.AppImage
+            release/*.deb
+            release/*.rpm
+          if-no-files-found: warn
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 4 — Collect all artifacts and publish GitHub Release
+  # Only runs after ALL three platform builds succeed
+  # ─────────────────────────────────────────────────────────────────────────────
+  release:
+    name: 🎉 Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build-macos, build-windows, build-linux]
+
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📥 Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-artifacts
+          path: ./artifacts/macos
+
+      - name: 📥 Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-artifacts
+          path: ./artifacts/windows
+
+      - name: 📥 Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-artifacts
+          path: ./artifacts/linux
+
+      - name: 🏷️ Resolve version tag
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📋 List collected artifacts
+        run: find ./artifacts -type f | sort
+
+      - name: 🚀 Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "Playwright Studio ${{ steps.version.outputs.tag }}"
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.tag, 'beta') || contains(steps.version.outputs.tag, 'alpha') || contains(steps.version.outputs.tag, 'rc') }}
+          body: |
+            ## 🚀 Playwright Studio ${{ steps.version.outputs.tag }}
+
+            A codeless Playwright test recorder and runner with TypeScript, Java and Cucumber Gherkin export support.
+
+            ---
+
+            ## 📥 Downloads
+
+            | Platform | Architecture | File |
+            |----------|-------------|------|
+            | 🍎 macOS | Apple Silicon (M1/M2/M3/M4) | `*-arm64.dmg` |
+            | 🍎 macOS | Intel | `*-x64.dmg` |
+            | 🪟 Windows | 64-bit | `*-x64-Setup.exe` |
+            | 🪟 Windows | 32-bit | `*-ia32-Setup.exe` |
+            | 🪟 Windows | Portable (no install needed) | `*-Portable.exe` |
+            | 🐧 Linux | x64 | `*.AppImage` / `*.deb` / `*.rpm` |
+
+            ---
+
+            ## 🛠️ Installation
+
+            ### 🍎 macOS
+            1. Download the `.dmg` for your chip (`arm64` = Apple Silicon, `x64` = Intel)
+            2. Open the `.dmg` and drag **Playwright Studio** → **Applications**
+            3. **First launch:** right-click → **Open** → **Open Anyway** (unsigned app warning)
+
+            ### 🪟 Windows
+            1. Download the `.exe` installer (`x64` for 64-bit, `ia32` for 32-bit)
+            2. Run the installer and follow the setup wizard
+            3. If **Windows SmartScreen** warns → **More info** → **Run anyway**
+
+            ### 🐧 Linux
+            ```bash
+            # AppImage — no install needed
+            chmod +x Playwright-Studio-*.AppImage
+            ./Playwright-Studio-*.AppImage
+
+            # Debian / Ubuntu
+            sudo dpkg -i playwright-studio_*.deb
+
+            # Fedora / RHEL
+            sudo rpm -i playwright-studio-*.rpm
+            ```
+
+            ---
+
+            > **Note:** Builds are currently unsigned. macOS and Windows may show a security warning on first launch — this is expected for unsigned apps.
+          files: |
+            ./artifacts/**/*.dmg
+            ./artifacts/**/*.zip
+            ./artifacts/**/*.exe
+            ./artifacts/**/*.AppImage
+            ./artifacts/**/*.deb
+            ./artifacts/**/*.rpm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

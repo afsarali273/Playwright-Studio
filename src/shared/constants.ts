@@ -2,7 +2,7 @@
  * Application-wide constants.
  */
 
-export const APP_NAME = 'Playwright IDE';
+export const APP_NAME = 'Playwright Studio';
 export const APP_VERSION = '0.1.0';
 
 /** Default project configuration */
