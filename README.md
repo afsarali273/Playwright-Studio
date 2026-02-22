@@ -1,157 +1,87 @@
-## Playwright IDE — Architecture Preview
+# Playwright Studio
 
-This project is an architecture preview for a Playwright-based IDE. It contains:
+Welcome to the Playwright Studio! This project is designed to help developers automate web browsers using the Playwright library. Here's everything you need to know to get started with this project.
 
-- A **Next.js + React + TypeScript** web app that documents and visualizes the IDE architecture.
-- An `src/` tree that sketches out a real **Electron + Playwright** IDE:
-  - `src/main`: Electron main process, browser manager, recorder, runner, storage.
-  - `src/shared`: Types, constants, and IPC contracts shared between main and renderer.
-  - `src/renderer`: Planned renderer UI for the IDE window.
+## Project Setup
 
-The web app is fully runnable today. The Electron runtime is scaffolded but not yet wired into the default npm scripts.
+To set up the project, follow these steps:
 
----
-
-## Prerequisites
-
-- Node.js **18+** recommended
-- npm, pnpm, or yarn
-- macOS, Linux, or Windows
-- Optional (for Playwright work later): `npx playwright install` to download browser binaries
-
----
-
-## Getting Started
-
-From the project root:
-
-```bash
-npm install
-# or
-pnpm install
-# or
-yarn install
-```
-
-This installs all dependencies for the Next.js app and the TypeScript code under `src/`.
-
----
-
-## Running the Web App (Architecture UI)
-
-### Development
-
-```bash
-npm run dev
-```
-
-- Starts the Next.js development server (by default at `http://localhost:3000`).
-- You will see the “Playwright IDE — Architecture Preview” interface with:
-  - Architecture sections (recorder, runner, storage, browser manager, plugins).
-  - Example steps and project configuration JSON.
-  - Folder tree of the intended Electron + Playwright IDE.
-
-### Production Build
-
-```bash
-npm run build
-npm start
-```
-
-- `npm run build` creates an optimized production build.
-- `npm start` serves the built Next.js app.
-
-### Linting
-
-```bash
-npm run lint
-```
-
-This runs `eslint .` as defined in `package.json`. If `eslint` is not installed or configured yet, you may need to add it as a dev dependency and set up a config.
-
----
-
-## Electron + Playwright IDE (Planned Wiring)
-
-The repo includes a full `src/main` tree intended for an Electron main process and embedded Playwright browser:
-
-- `src/main/core/browser-manager.ts`: Manages an `BrowserView` inside Electron and can discover external browsers via CDP.
-- `src/main/recorder/recorder-engine.ts`: Orchestrator for recording steps (planned).
-- `src/main/runner/runner-engine.ts`: Executes recorded steps using Playwright.
-- `src/main/storage/project-manager.ts`: Handles project folders, config, and steps.
-- `src/shared/types.ts`, `src/shared/ipc-channels.ts`, `src/shared/constants.ts`: Shared contracts between main and renderer.
-
-In the architecture UI, you can see a suggested set of scripts for running the Electron build:
-
-```json
-{
-  "scripts": {
-    "dev:renderer": "vite --config vite.config.electron.ts",
-    "dev:electron": "tsc -p src/tsconfig.electron.json && electron dist/main/index.js",
-    "build:renderer": "vite build --config vite.config.electron.ts",
-    "build:electron": "tsc -p src/tsconfig.electron.json",
-    "build": "pnpm run build:renderer && pnpm run build:electron"
-  }
-}
-```
-
-These are not yet present in `package.json`. When you are ready to turn the architecture into a runnable Electron IDE, you can:
-
-1. Add scripts like the ones above to `package.json`.
-2. Configure `vite.config.electron.ts` to build the renderer for Electron.
-3. Ensure `src/main/index.ts` and `src/tsconfig.electron.json` compile into `dist/main`.
-4. Run:
-
+1. **Clone the repository:**  
    ```bash
-   npx tsc -p src/tsconfig.electron.json
-   npm run dev:renderer
-   npm run dev:electron
+   git clone https://github.com/afsarali273/Playwright-Studio.git
    ```
 
----
+2. **Navigate to the project directory:**  
+   ```bash
+   cd Playwright-Studio
+   ```
 
-## Project Layout
+3. **Install dependencies:**  
+   ```bash
+   npm install
+   ```
 
-High-level structure:
+4. **Run the project:**  
+   ```bash
+   npm start
+   ```
 
-- `app/`
-  - Next.js routes and pages (including the architecture preview).
-- `components/`
-  - UI components used by the web app.
-- `src/`
-  - `main/`
-    - Electron main process code (browser manager, recorder, runner, storage, IPC).
-  - `renderer/`
-    - Planned Electron renderer entry and UI.
-  - `shared/`
-    - Types, constants, and IPC channel definitions shared across processes.
-- `examples/`
-  - `config.json`: Sample project configuration.
-  - `steps.json`: Sample recorded steps.
+## Directory Breakdown
 
-This layout is meant to reflect how a real Playwright IDE could be structured, even if not all parts are wired up yet.
+- **src/**: Contains the main source code for the application.
+- **tests/**: Contains all the test files that ensure the code is functioning as expected.
+- **config/**: Includes configuration files for various environments.
+- **scripts/**: Contains useful scripts to automate tasks.
 
----
+## Features
 
-## Type Checking
+- **Cross-browser testing**: Supports multiple browsers, including Chromium, Firefox, and WebKit.
+- **Headless mode**: Run tests without a GUI, allowing for faster execution.
+- **Screenshots & Videos**: Capture screenshots and videos of tests for better debugging.
+- **Customizable**: Easy to configure based on the requirements of the project.
 
-To run a TypeScript type check based on the root `tsconfig.json`:
+## Examples
 
-```bash
-npx tsc --noEmit
+Here are some examples to help you get started:
+
+### Basic Example
+```javascript
+const { chromium } = require('playwright');
+
+(async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  await page.goto('https://example.com');
+  await page.screenshot({ path: 'example.png' });
+  await browser.close();
+})();
 ```
 
-To type-check the Electron main process code using `src/tsconfig.electron.json` (once you have matching input files in `src/main` and `src/shared`):
+### Advanced Example with Assertions
+```javascript
+const { chromium } = require('playwright');
+const { expect } = require('@playwright/test');
 
-```bash
-npx tsc -p src/tsconfig.electron.json --noEmit
+(async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  await page.goto('https://example.com');
+  const title = await page.title();
+  expect(title).toBe('Example Domain');
+  await browser.close();
+})();
 ```
 
----
+## Contributing Guidelines
 
-## Notes
+We welcome contributions from everyone! If you'd like to contribute to the project, please follow these steps:
 
-- The current focus of this repository is **architecture and structure** rather than a fully polished IDE runtime.
-- The Next.js app is the primary entry point for exploring the design.
-- The Electron and Playwright pieces in `src/` are designed to be extended into a full local IDE if you choose to wire them up.
+1. **Fork the repository**: Create your own copy of the repository on GitHub.
+2. **Create a new branch**:  
+   ```bash
+   git checkout -b feature/YourFeatureName
+   ```
+3. **Make your changes**: Implement your feature or fix bugs.
+4. **Submit a pull request**: Open a pull request in the original repository for review.
 
+Thank you for your interest in contributing!
